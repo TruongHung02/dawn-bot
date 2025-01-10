@@ -2,14 +2,6 @@ import asyncio
 from typing import Any, Tuple
 import httpx
 
-from dotenv import load_dotenv
-import os
-
-# Load environment variables from a specific path
-# load_dotenv(dotenv_path="")
-
-# capcha_api_key = os.getenv("TWOCAPCHA_API")
-
 class TwoCaptchaImageSolver:
     BASE_URL = "https://api.2captcha.com"
 

@@ -14,13 +14,6 @@ from .api import DawnExtensionAPI
 from utils import EmailValidator, LinkExtractor
 from database import Accounts
 from .exceptions.base import APIError, SessionRateLimited, CaptchaSolvingFailed, APIErrorType
-from dotenv import load_dotenv
-import os
-
-# Load environment variables from a specific path
-# load_dotenv(dotenv_path="../.env")
-
-# capcha_api_key = os.getenv("TWOCAPCHA_API")
 
 class ByPassCloudFlare:
     def get_turnstile_token(api_key='ea1524eab3568ed800b37db33e929489', website_url='', website_key='0x4AAAAAAA0DVmzm9PiLTNuf'):
