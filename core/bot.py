@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta
 from typing import Tuple, Any, Optional, Literal
 import httpx
@@ -216,7 +217,8 @@ class Bot(DawnExtensionAPI):
                         f"Account: {self.account_data.email} | {confirm_url["data"]}"
                     )
                 
-                token, user_agent = ByPassCloudFlare.get_turnstile_token(website_url=redirect_url)
+                
+                token, user_agent = await asyncio.to_thread(ByPassCloudFlare.get_turnstile_token(website_url=redirect_url))
 
                 key = ToolsManager.convert_url_params_to_dict(redirect_url)
 
