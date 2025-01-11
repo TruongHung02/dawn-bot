@@ -205,69 +205,54 @@ class Bot(DawnExtensionAPI):
                 f"Account: {self.account_data.email} | Link found, confirming email..."
             )
 
-            redirect_url = ByPassCloudFlare.get_redirect_url(url=confirm_url["data"])
+            redirect_url = await asyncio.to_thread(ByPassCloudFlare.get_redirect_url(url=confirm_url["data"])) 
 
-            response = await self.clear_request(url=redirect_url)
-            if response.status_code == 200:
-                logger.info(
-                    f"Account: {self.account_data.email} | redirect into confirmation link..."
-                )
+            token, user_agent = await asyncio.to_thread(ByPassCloudFlare.get_turnstile_token(website_url=redirect_url))
 
+            key = ToolsManager.convert_url_params_to_dict(redirect_url)
+
+            if token and key:
+
+                key = key["key"]
+
+                json_data = {'token': token}
+
+                headers = {
+                    'accept': '*/*',
+                    'accept-language': 'en-US,en;q=0.6',
+                    'content-type': 'application/json',
+                    'origin': 'https://www.aeropres.in',
+                    'priority': 'u=1, i',
+                    'sec-ch-ua': '"Brave";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+                    'sec-ch-ua-mobile': '?0',
+                    'sec-ch-ua-platform': '"Windows"',
+                    'sec-fetch-dest': 'empty',
+                    'sec-fetch-mode': 'cors',
+                    'sec-fetch-site': 'same-origin',
+                    'sec-gpc': '1',
+                    'user-agent': f'{user_agent}',
+                }
+
+                verify_response = await self.send_request(request_type="POST", 
+                                                        url= f"https://www.aeropres.in/chromeapi/dawn/v1/userverify/verifycheck?key={key}", 
+                                                        json_data=json_data, 
+                                                        headers=headers)
+                
                 logger.info(
-                        f"Account: {self.account_data.email} | {confirm_url["data"]}"
+                        f"Account: {self.account_data.email} | {verify_response}"
                     )
-                
-                
-                token, user_agent = await asyncio.to_thread(ByPassCloudFlare.get_turnstile_token(website_url=redirect_url))
-
-                key = ToolsManager.convert_url_params_to_dict(redirect_url)
-
-                if token and key:
-
-                    key = key["key"]
-
-                    json_data = {'token': token}
-
-                    headers = {
-                        'accept': '*/*',
-                        'accept-language': 'en-US,en;q=0.6',
-                        'content-type': 'application/json',
-                        'origin': 'https://www.aeropres.in',
-                        'priority': 'u=1, i',
-                        'sec-ch-ua': '"Brave";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
-                        'sec-ch-ua-mobile': '?0',
-                        'sec-ch-ua-platform': '"Windows"',
-                        'sec-fetch-dest': 'empty',
-                        'sec-fetch-mode': 'cors',
-                        'sec-fetch-site': 'same-origin',
-                        'sec-gpc': '1',
-                        'user-agent': f'{user_agent}',
-                    }
-
-                    verify_response = await self.send_request(request_type="POST", 
-                                                            url= f"https://www.aeropres.in/chromeapi/dawn/v1/userverify/verifycheck?key={key}", 
-                                                            json_data=json_data, 
-                                                            headers=headers)
-                    
-                    logger.info(
-                            f"Account: {self.account_data.email} | {verify_response}"
-                        )
-                
-                    if "success" in verify_response:
-                        logger.success(
-                            f"Account: {self.account_data.email} | Successfully verified registration"
-                        )
-                        return OperationResult(
-                            identifier=self.account_data.email,
-                            data=self.account_data.password,
-                            status=True,
-                        )
-                else:
-                    logger.error(f"Account: {self.account_data.email} | Failed to pass confirm cloudflare")
+            
+                if "success" in verify_response:
+                    logger.success(
+                        f"Account: {self.account_data.email} | Successfully verified registration"
+                    )
+                    return OperationResult(
+                        identifier=self.account_data.email,
+                        data=self.account_data.password,
+                        status=True,
+                    )
             else:
-                logger.error(
-                    f"Account: {self.account_data.email} | Failed to confirm registration"
-                )
+                logger.error(f"Account: {self.account_data.email} | Failed to pass confirm cloudflare")
 
         except APIError as error:
             match error.error_type:
